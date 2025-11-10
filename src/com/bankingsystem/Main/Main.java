@@ -1,127 +1,116 @@
-package com.bankingsystem.Main;
-import com.bankingsystem.exception.InvalidNameException;
-import com.bankingsystem.model.Account;
-import com.bankingsystem.service.AccountService;
-import com.bankingsystem.exception.AccountNotFoundException;
-import com.bankingsystem.service.TransactionThread;
+package com.bankingsystem;
 
-import java.util.*;
+import com.bankingsystem.service.AccountService;
+import com.bankingsystem.exception.*;
+import com.bankingsystem.model.Account;
+
+import java.util.Scanner;
+
 public class Main {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         AccountService service = new AccountService();
+        boolean mainRunning = true;
 
+        System.out.println("=== Welcome to Banking System Simulator ===");
 
-        System.out.println("Welcome to Banking System Simulator");
-
-
-        while (true) {
-            printMenu();
+        while (mainRunning) {
+            System.out.println("\n--- Main Menu ---");
+            System.out.println("1. Create New Account");
+            System.out.println("2. Perform Operations on Existing Account");
+            System.out.println("3. Exit");
             System.out.print("Enter your choice: ");
-            try {
-                int choice = Integer.parseInt(sc.nextLine().trim());
-                switch (choice) {
-                    case 1 -> { // Create
-                        System.out.print("Enter full name: ");
-                        String name = sc.nextLine();
-                        try {
-                            Account acc = service.createAccount(name);
-                            System.out.println("Account created: " + acc.getAccountNumber());
-                        } catch (InvalidNameException e) {
-                            System.out.println("Error: " + e.getMessage());
-                        }
+            String mainChoice = sc.nextLine();
+
+            switch (mainChoice) {
+                case "1" -> {
+                    System.out.print("Enter account holder name: ");
+                    String name = sc.nextLine();
+                    try {
+                        Account acc = service.createAccount(name);
+                        System.out.println("Account created successfully! Account Number: " + acc.getAccountNumber());
+                    } catch (InvalidNameException e) {
+                        System.out.println("Error: " + e.getMessage());
                     }
-                    case 2 -> { // Deposit
-                        System.out.print("Enter Account Number: ");
-                        String accNum = sc.nextLine();
-                        System.out.print("Enter amount to deposit: ");
-                        double amt = Double.parseDouble(sc.nextLine());
-                        try {
-                            service.deposit(accNum, amt);
-                            System.out.println("Deposit successful");
-                        } catch (Exception e) {
-                            System.out.println("Error: " + e.getMessage());
-                        }
-                    }
-                    case 3 -> { // Withdraw
-                        System.out.print("Enter Account Number: ");
-                        String accNum = sc.nextLine();
-                        System.out.print("Enter amount to withdraw: ");
-                        double amt = Double.parseDouble(sc.nextLine());
-                        try {
-                            service.withdraw(accNum, amt);
-                            System.out.println("Withdrawal successful");
-                        } catch (Exception e) {
-                            System.out.println("Error: " + e.getMessage());
-                        }
-                    }
-                    case 4 -> { // Transfer
-                        System.out.print("From Account Number: ");
-                        String from = sc.nextLine();
-                        System.out.print("To Account Number: ");
-                        String to = sc.nextLine();
-                        System.out.print("Amount: ");
-                        double amt = Double.parseDouble(sc.nextLine());
-                        try {
-                            service.transfer(from, to, amt);
-                            System.out.println("Transfer successful");
-                        } catch (Exception e) {
-                            System.out.println("Error: " + e.getMessage());
-                        }
-                    }
-                    case 5 -> { // Show balance
-                        System.out.print("Enter Account Number: ");
-                        String accNum = sc.nextLine();
-                        try {
-                            service.showBalance(accNum);
-                        } catch (AccountNotFoundException e) {
-                            System.out.println("Error: " + e.getMessage());
-                        }
-                    }
-                    case 6 -> { // List accounts (for debug/demo)
-                        System.out.println("All accounts:");
-                        service.getAllAccounts().values().forEach(System.out::println);
-                    }
-                    case 7 -> { // Multithread demo
-                        System.out.print("Enter Account Number for demo: ");
-                        String accNum = sc.nextLine();
-                        System.out.print("Enter initial deposit amount: ");
-                        double init = Double.parseDouble(sc.nextLine());
-                        try {
-                            service.deposit(accNum, init);
-                        } catch (Exception ignored) {}
-                        Thread t1 = new TransactionThread(service, accNum, 100, true);
-                        Thread t2 = new TransactionThread(service, accNum, 50, false);
-                        t1.start();
-                        t2.start();
-                        try { t1.join(); t2.join(); } catch (InterruptedException ignored) {}
-                        try { service.showBalance(accNum); } catch (AccountNotFoundException ignored) {}
-                    }
-                    case 8 -> {
-                        System.out.println("Exiting. Thank you!");
-                        sc.close();
-                        System.exit(0);
-                    }
-                    default -> System.out.println("Invalid choice. Try again.");
                 }
-            } catch (NumberFormatException nfe) {
-                System.out.println("Invalid input. Please enter numbers for menu choices.");
+
+                case "2" -> {
+                    System.out.print("Enter your Account Number: ");
+                    String accNum = sc.nextLine();
+                    try {
+                        Account acc = service.getAccount(accNum);
+                        if (acc == null) {
+                            throw new AccountNotFoundException("Account not found. Please create an account first.");
+                        }
+                        boolean accountOpsRunning = true;
+                        while (accountOpsRunning) {
+                            System.out.println("\n--- Account Operations Menu ---");
+                            System.out.println("1. Deposit");
+                            System.out.println("2. Withdraw");
+                            System.out.println("3. Transfer");
+                            System.out.println("4. Show Balance");
+                            System.out.println("5. Return to Main Menu");
+                            System.out.print("Enter your choice: ");
+                            String subChoice = sc.nextLine();
+
+                            switch (subChoice) {
+                                case "1" -> {
+                                    System.out.print("Enter amount to deposit: ");
+                                    double amt = Double.parseDouble(sc.nextLine());
+                                    try {
+                                        service.deposit(accNum, amt);
+                                        System.out.println("Deposit successful!");
+                                    } catch (Exception e) {
+                                        System.out.println("Error: " + e.getMessage());
+                                    }
+                                }
+                                case "2" -> {
+                                    System.out.print("Enter amount to withdraw: ");
+                                    double amt = Double.parseDouble(sc.nextLine());
+                                    try {
+                                        service.withdraw(accNum, amt);
+                                        System.out.println("Withdrawal successful!");
+                                    } catch (Exception e) {
+                                        System.out.println("Error: " + e.getMessage());
+                                    }
+                                }
+                                case "3" -> {
+                                    System.out.print("Enter destination Account Number: ");
+                                    String toAcc = sc.nextLine();
+                                    System.out.print("Enter amount to transfer: ");
+                                    double amt = Double.parseDouble(sc.nextLine());
+                                    try {
+                                        service.transfer(accNum, toAcc, amt);
+                                        System.out.println("Transfer successful!");
+                                    } catch (Exception e) {
+                                        System.out.println("Error: " + e.getMessage());
+                                    }
+                                }
+                                case "4" -> {
+                                    try {
+                                        service.showBalance(accNum);
+                                    } catch (AccountNotFoundException e) {
+                                        System.out.println("Error: " + e.getMessage());
+                                    }
+                                }
+                                case "5" -> accountOpsRunning = false; // return to main
+                                default -> System.out.println("Invalid option, try again.");
+                            }
+                        }
+                    } catch (AccountNotFoundException e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
+                }
+
+                case "3" -> {
+                    System.out.println("Thank you for using Banking System Simulator. Goodbye!");
+                    mainRunning = false;
+                }
+
+                default -> System.out.println("Invalid choice. Please try again.");
             }
         }
-    }
 
-
-    private static void printMenu() {
-        System.out.println("\n--- Main Menu ---");
-        System.out.println("1. Create Account");
-        System.out.println("2. Deposit");
-        System.out.println("3. Withdraw");
-        System.out.println("4. Transfer");
-        System.out.println("5. Show Balance");
-        System.out.println("6. List All Accounts");
-        System.out.println("7. Multithreading Demo (deposit & withdraw)");
-        System.out.println("8. Exit");
+        sc.close();
     }
 }
-
-
